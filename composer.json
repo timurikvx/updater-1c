@@ -1,0 +1,24 @@
+{
+    "name": "timurikvx/update-1c",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Timurikvx\\Update1c\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Гайфуллин Тимур",
+            "email": "gayfulin_t@zdravservice.ru"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "timurikvx/rac-worker": "1.x"
+
+    },
+    "require-dev": {
+        "tightenco/collect": "^9.52"
+    }
+}
