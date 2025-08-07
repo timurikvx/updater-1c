@@ -2,21 +2,21 @@
 
 namespace Timurikvx\Update1c;
 
-use RacWorker\Entity\ClusterEntity;
-use RacWorker\Entity\InfobaseEntity;
 use RacWorker\RacArchitecture;
 use RacWorker\RacWorker;
 use RacWorker\Services\ClusterAgent;
 use RacWorker\Services\ClusterUser;
 use RacWorker\Services\InfobaseUser;
 use Timurikvx\Update1c\Command\Command;
+use Timurikvx\Update1c\Traits\ErrorHandler;
+use Timurikvx\Update1c\Traits\Output;
+use Timurikvx\Update1c\Traits\PlatformConnection;
 
 class Updater
 {
 
-    private string $version;
+    use ErrorHandler, Output, PlatformConnection;
 
-    private bool $isLinux;
 
     private string $cluster_name;
 
@@ -30,13 +30,7 @@ class Updater
 
     private RacWorker $worker;
 
-    private ClusterEntity|null $cluster = null;
-
-    private InfobaseEntity|null $infobase = null;
-
     private string $code;
-
-    private bool $is32bits;
 
     private StorageConnection $storage;
 
@@ -44,9 +38,11 @@ class Updater
 
     private string $ID = '';
 
-    private string $infobase_login = '';
+    public Schedules $schedules;
 
-    private string $infobase_password = '';
+    public Sessions $sessions;
+
+    public Connections $connections;
 
     public function __construct(string $version, string $host, int $port, bool $isLinux = false, bool $is32bits = true)
     {
@@ -56,7 +52,7 @@ class Updater
         $this->is32bits = $is32bits;
         $this->isLinux = $isLinux;
         $this->code = '';
-        $this->init();
+        $this->initAuth();
     }
 
     public function setStorageConnection(StorageConnection $storage): void
@@ -104,7 +100,7 @@ class Updater
         if(empty($this->storage)){
             return;
         }
-        $this->updatePermissionCode();
+        //$this->updatePermissionCode();
         $this->changes = $this->updatingFromStorage();
     }
     /**
@@ -116,9 +112,9 @@ class Updater
         $this->changes = [];
 
         if (!$dynamic) {
-            $this->stopSchedules();
-            $this->stopSessions();
-            $this->removeConnections();
+            $this->sessions->off();
+            $this->schedules->off();
+            $this->connections->clearAll();
             $this->checkDatabase();
         }
         if ($this->ID == $this->getID()){
@@ -191,69 +187,10 @@ class Updater
         return $this->changes;
     }
 
-    /**
-     * @throws \Exception
-     */
-    public function stopSchedules(): bool
-    {
-        return $this->setScheduledJobsDeny(true);
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function stopSessions(): bool
-    {
-        return $this->setSessionsDeny(true);
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function startSessions(): bool
-    {
-        return $this->setSessionsDeny(false);
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function startSchedules(): bool
-    {
-        return $this->setScheduledJobsDeny(false);
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function removeConnections(): void
-    {
-        $error = '';
-        $sessions = $this->worker->session->list($this->cluster, $this->infobase, $error);
-        $this->handleError($error, 115);
-        $servers = $this->worker->server->list($this->cluster, $error);
-        $this->handleError($error, 116);
-        foreach($servers as $server){
-            $processes = $this->worker->process->list($this->cluster, $server, $error);
-            $this->handleError($error, 117);
-            foreach($processes as $process){
-                $connections = $this->worker->connection->list($this->cluster, $process, $this->infobase, $error);
-                $this->handleError($error, 118);
-                foreach($connections as $connection){
-                    $this->worker->connection->remove($this->cluster, $process, $connection, $this->infobase->getInfobaseUser());
-                    //$this->handleError($error, 119);
-                }
-            }
-        }
-        foreach($sessions as $session){
-            $this->worker->session->remove($this->cluster, $session);
-            //$this->handleError($error, 120);
-        }
-    }
 
     ///////////////////// PRIVATE /////////////////////
 
-    private function init(): void
+    private function initAuth(): void
     {
         $this->admin = new ClusterUser('', '');
         $this->user = new InfobaseUser('', '');
@@ -266,8 +203,8 @@ class Updater
     private function afterUpdate(bool $dynamic): void
     {
         if(!$dynamic){
-            $this->startSchedules();
-            $this->startSessions();
+            $this->sessions->on();
+            $this->schedules->on();
         }
     }
 
@@ -287,14 +224,6 @@ class Updater
         $code = 0;
         Command::run($command, $code);
         return $this->handleUpdate($code, $filename);
-    }
-
-    private function getAccessCode(): string
-    {
-        if(empty($this->code)){
-            return '';
-        }
-        return ' /UC '.$this->code;
     }
 
     /**
@@ -321,103 +250,6 @@ class Updater
         return $this->handleUpdateStorage($code, $filename);
     }
 
-    private function connection(): string
-    {
-        $filler = $this->isLinux? '': '"';
-        $display = $this->isLinux? 'xvfb-run ': '';
-        $path = $this->getPath();
-        return $display.$filler.$path.'/1cv8'.$filler;
-    }
-
-    private function infobase(): string
-    {
-        $server = $this->cluster->getHost();
-        $base = $this->infobase->getName();
-        $user = $this->infobase_login;      //'OбменРИБ';
-        $pass = $this->infobase_password;   //'123';
-        return "/S \"{$server}\\{$base}\" /N \"{$user}\" /P \"{$pass}\"";
-    }
-
-    private function disableMessages(): string
-    {
-        return " /DisableStartupMessages /DisableSplash /DisableStartupDialogs /DisableUnrecoverableErrorMessage";
-    }
-
-    private function getPath(): string
-    {
-        if($this->isLinux){
-            $start = '/opt/1cv8/';
-            $bits = ($this->is32bits)? 'x86_64': 'x64';
-            $path = $start.$bits.'/'.$this->version;
-        }else{
-            $start = 'C:\\';
-            $bits = ($this->is32bits)? 'Program Files (x86)': 'Program Files';
-            $path = $start.$bits.'\\1cv8\\'.$this->version.'\\bin';
-        }
-        return $path;
-    }
-
-    private function getArray(string $filename, &$text = ''): array
-    {
-        $text = $this->getOutText($filename);
-        return array_filter(explode("\r\n", trim($text)));
-    }
-
-    private function getOutText(string $filename): string
-    {
-        return preg_replace('/^\xEF\xBB\xBF/', '', trim(file_get_contents($filename)));
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function handleUpdate(int $code, string $filename): bool
-    {
-        $text = '';
-        $result = $this->getArray($filename, $text);
-        if(count($result) == 0 && $code == 0){
-            return true;
-        }
-        if($code != 0){
-            throw new \Exception($text, 177);
-        }
-        $complete = in_array('Обновление конфигурации успешно завершено', $result);
-        if(!$complete){
-            $complete = in_array('Конфигурация обновлена динамически', $result);
-        }
-        return $complete;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function handleUpdateStorage(int $code, string $filename): array
-    {
-        $text = '';
-        $array = $this->getArray($filename, $text);
-        if(count($array) == 0 && $code == 0){
-            return [];
-        }
-        if($code != 0){
-            throw new \Exception($text, 177);
-        }
-        $objects = [];
-        $writing = false;
-        foreach($array as $line){
-            if (str_contains($line, 'Начало операции с хранилищем конфигурации')){
-                $writing = true;
-                continue;
-            }
-            if (str_contains($line, 'Операция с хранилищем конфигурации завершена')){
-                break;
-            }
-            if($writing){
-                $objects[] = trim(str_replace('Объект получен из хранилища:', '', $line));
-            }
-        }
-        return $objects;
-    }
-
     /**
      * @throws \Exception
      */
@@ -426,58 +258,9 @@ class Updater
         $this->checkData();
         $this->getCluster();
         $this->getInfobase();
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function setScheduledJobsDeny(bool $value): bool
-    {
-        $error = '';
-        $this->handleError($error, 109);
-        $this->infobase->setScheduledJobsDeny($value);
-        $result = $this->worker->infobase->update($this->cluster, $this->infobase, $error);
-        $this->handleError($error, 110);
-        return $result;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function setSessionsDeny(bool $value): bool
-    {
-        $error = '';
-        $this->infobase->setSessionsDeny($value);
-        $result = $this->worker->infobase->update($this->cluster, $this->infobase, $error);
-        if(!empty($error)){
-            throw new \Exception($error, 107);
-        }
-        return $result;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function updatePermissionCode(): void
-    {
-        if(empty($this->code)){
-            return;
-        }
-        $this->infobase->setPermissionCode($this->code);
-        $this->worker->infobase->update($this->cluster, $this->infobase, $error);
-        if(!empty($error)){
-            throw new \Exception($error, 134);
-        }
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function handleError(string $error, int $code = 100): void
-    {
-        if(!empty($error)){
-            throw new \Exception($error, $code);
-        }
+        $this->schedules = new Schedules($this->worker, $this->cluster, $this->infobase);
+        $this->sessions = new Sessions($this->worker, $this->cluster, $this->infobase);
+        $this->connections = new Connections($this->worker, $this->cluster, $this->infobase);
     }
 
     /**
