@@ -55,6 +55,11 @@ class Updater
         $this->initAuth();
     }
 
+    public function setRacWorker(RacWorker $worker): void
+    {
+        $this->worker = $worker;
+    }
+
     public function setStorageConnection(StorageConnection $storage): void
     {
         $this->storage = $storage;
@@ -162,10 +167,10 @@ class Updater
         throw new \Exception($result, 300);
     }
 
-    public function setCurrentID(string $id): void
-    {
-        $this->ID = $id;
-    }
+//    public function setCurrentID(string $id): void
+//    {
+//        $this->ID = $id;
+//    }
 
     public function getID(): string
     {
@@ -257,7 +262,7 @@ class Updater
     {
         $this->checkData();
         $this->getCluster();
-        $this->getInfobase();
+        $this->initInfobase();
         $this->schedules = new Schedules($this->worker, $this->cluster, $this->infobase);
         $this->sessions = new Sessions($this->worker, $this->cluster, $this->infobase);
         $this->connections = new Connections($this->worker, $this->cluster, $this->infobase);
@@ -287,7 +292,7 @@ class Updater
     /**
      * @throws \Exception
      */
-    private function getInfobase(): void
+    private function initInfobase(): void
     {
         $error = '';
         if($this->infobase != null){
@@ -300,6 +305,9 @@ class Updater
         if(is_null($infobase)){
             throw new \Exception('База данных не найдена', 104);
         }
+
+        $uuid = $infobase->uuid().$this->cluster->uuid();
+
         $error = '';
         $infobase->setUser($this->user);
         $infobaseEntity = $this->worker->infobase->info($this->cluster, $infobase, $error);

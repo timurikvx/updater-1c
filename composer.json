@@ -13,7 +13,6 @@
             "email": "gayfulin_t@zdravservice.ru"
         }
     ],
-    "minimum-stability": "dev",
     "require": {
         "timurikvx/rac-worker": "1.x"
 

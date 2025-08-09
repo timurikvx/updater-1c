@@ -68,4 +68,9 @@ trait PlatformConnection
         return $path;
     }
 
+    public function getInfobase(): InfobaseEntity|null
+    {
+        return $this->infobase;
+    }
+
 }
