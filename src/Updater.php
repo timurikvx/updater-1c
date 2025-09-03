@@ -240,6 +240,8 @@ class Updater
             return [];
         }
 
+        $this->connections->clearConfigurationConnect();
+
         $connection = $this->connection();
         $infobase = $this->infobase();
         $messages = $this->disableMessages();

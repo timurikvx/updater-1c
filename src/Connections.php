@@ -36,9 +36,34 @@ class Connections
     /**
      * @throws \Exception
      */
-    public function clearConnections(): void
+    public function clearConfigurationConnect(): void
+    {
+        $this->clearConnections(['Designer']);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function clearConnections(array $apps = []): void
+    {
+        $connections = $this->getConnections();
+        foreach($connections as $connection){
+            $appId = $connection->getAppId();
+            if(count($apps) > 0 && in_array($appId, $apps)){
+                $connection->remove();
+            }else{
+                $connection->remove();
+            }
+        }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function getConnections(): array
     {
         $error = '';
+        $connections = [];
         $servers = $this->worker->server->list($this->cluster, $error);
         $this->handleError($error, 116);
         foreach($servers as $server){
@@ -48,10 +73,11 @@ class Connections
                 $connections = $this->worker->connection->list($this->cluster, $process, $this->infobase, $error);
                 $this->handleError($error, 118);
                 foreach($connections as $connection){
-                    $this->worker->connection->remove($this->cluster, $process, $connection, $this->infobase->getInfobaseUser());
+                    $connections[] = new Connection($this->worker->connection, $this->cluster,$process, $this->infobase, $connection);
                 }
             }
         }
+        return $connections;
     }
 
     public function clearSessions(): void
@@ -62,4 +88,5 @@ class Connections
             $this->worker->session->remove($this->cluster, $session);
         }
     }
+
 }
