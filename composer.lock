@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "timurikvx/rac-worker",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/timurikvx/rac-worker.git",
-                "reference": "dab31878197356af785ef9f0de36e172912c620d"
+                "reference": "6bdf0326f0aa55b65a9dab21a172180dd8c09e57"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/timurikvx/rac-worker/zipball/dab31878197356af785ef9f0de36e172912c620d",
-                "reference": "dab31878197356af785ef9f0de36e172912c620d",
+                "url": "https://api.github.com/repos/timurikvx/rac-worker/zipball/6bdf0326f0aa55b65a9dab21a172180dd8c09e57",
+                "reference": "6bdf0326f0aa55b65a9dab21a172180dd8c09e57",
                 "shasum": ""
             },
             "require": {
@@ -45,15 +45,15 @@
             "description": "Библиотека обертка для работы с компонентой RAS/RAC для 1С:Предприятия 8",
             "support": {
                 "issues": "https://github.com/timurikvx/rac-worker/issues",
-                "source": "https://github.com/timurikvx/rac-worker/tree/v1.0.1"
+                "source": "https://github.com/timurikvx/rac-worker/tree/v1.0.2"
             },
-            "time": "2025-08-13T06:10:15+00:00"
+            "time": "2025-09-20T11:19:02+00:00"
         }
     ],
     "packages-dev": [
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.32.0",
+            "version": "v1.33.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
@@ -114,7 +114,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.32.0"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.33.0"
             },
             "funding": [
                 {
@@ -123,6 +123,10 @@
                 },
                 {
                     "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
                     "type": "github"
                 },
                 {

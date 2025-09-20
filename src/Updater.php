@@ -17,7 +17,6 @@ class Updater
 
     use ErrorHandler, Output, PlatformConnection;
 
-
     private string $cluster_name;
 
     private string $infobase_name;
@@ -167,11 +166,6 @@ class Updater
         throw new \Exception($result, 300);
     }
 
-//    public function setCurrentID(string $id): void
-//    {
-//        $this->ID = $id;
-//    }
-
     public function getID(): string
     {
         $connection = $this->connection();
@@ -308,7 +302,7 @@ class Updater
             throw new \Exception('База данных не найдена', 104);
         }
 
-        $uuid = $infobase->uuid().$this->cluster->uuid();
+        //$uuid = $infobase->uuid().$this->cluster->uuid();
 
         $error = '';
         $infobase->setUser($this->user);
