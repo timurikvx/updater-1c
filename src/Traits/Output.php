@@ -10,6 +10,12 @@ trait Output
         return array_filter(explode("\r\n", trim($text)));
     }
 
+    protected function readArray(string $filename): array|null
+    {
+        $text = $this->getOutText($filename);
+        return json_decode($text, true);
+    }
+
     protected function getOutText(string $filename): string
     {
         return preg_replace('/^\xEF\xBB\xBF/', '', trim(file_get_contents($filename)));
@@ -64,4 +70,5 @@ trait Output
         }
         return $objects;
     }
+
 }

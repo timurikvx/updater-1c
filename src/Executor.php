@@ -4,11 +4,12 @@ namespace Timurikvx\Update1c;
 
 use RacWorker\Entity\InfobaseEntity;
 use Timurikvx\Update1c\Command\Command;
+use Timurikvx\Update1c\Traits\Output;
 use Timurikvx\Update1c\Traits\PlatformConnection;
 
 class Executor
 {
-    use PlatformConnection;
+    use PlatformConnection, Output;
 
     public function __construct(string $version, bool $isLinux, bool $is32bits, InfobaseEntity $infobase)
     {
@@ -25,7 +26,7 @@ class Executor
         $this->infobase_password = $password;
     }
 
-    public function execute(string $command): bool
+    public function execute(string $command, mixed &$data = null): bool
     {
         $connection = $this->connection();
         $infobase = $this->infobase();
@@ -37,6 +38,7 @@ class Executor
         $command = $connection." ENTERPRISE ".$infobase.$this->getAccessCode()." /C ".$command." /L ru /Out \"".$filename."\"".$messages;
         $code = 0;
         Command::run($command, $code);
+        $data = $this->readArray($filename);
         return ($code === 0);
     }
 
