@@ -26,7 +26,7 @@ class Executor
         $this->infobase_password = $password;
     }
 
-    public function execute(string $command, mixed &$data = null): bool
+    public function execute(string $command, mixed &$out = null): bool
     {
         $connection = $this->connection();
         $infobase = $this->infobase();
@@ -38,7 +38,8 @@ class Executor
         $command = $connection." ENTERPRISE ".$infobase.$this->getAccessCode()." /C ".$command." /L ru /Out \"".$filename."\"".$messages;
         $code = 0;
         Command::run($command, $code);
-        $data = $this->readArray($filename);
+        //$data = $this->readArray($filename);
+        $out = $this->getOutText($filename);
         return ($code === 0);
     }
 
