@@ -71,7 +71,7 @@ class Connections
             $this->handleError($error, 117);
             foreach($processes as $process){
                 $connections = $this->worker->connection->list($this->cluster, $process, $this->infobase, $error);
-                $this->handleError($error, 118);
+                //$this->handleError($error, 118);
                 foreach($connections as $connection){
                     $connections[] = new Connection($this->worker->connection, $this->cluster,$process, $this->infobase, $connection);
                 }

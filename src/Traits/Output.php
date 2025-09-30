@@ -29,7 +29,7 @@ trait Output
         $text = '';
         $result = $this->getArray($filename, $text);
         if(count($result) == 0 && $code == 0){
-            return false;
+            return true;
         }
         if($code != 0){
             throw new \Exception($text, 177);
